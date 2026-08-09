@@ -31,6 +31,8 @@ jobs:
           git checkout -b zn-m2
           git remote add zn-m2 https://github.com/no-duke/istoreos.git
           git fetch zn-m2 zn-m2
+          git config --global user.email "github-actions@users.noreply.github.com"
+          git config --global user.name "GitHub Actions"
           git cherry-pick zn-m2/zn-m2 --strategy-option=theirs || git merge zn-m2/zn-m2 --no-edit
 
       - name: Setup build environment
