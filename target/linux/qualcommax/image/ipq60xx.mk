@@ -52,3 +52,15 @@ define Device/yuncore_fap650
 endef
 TARGET_DEVICES += yuncore_fap650
 
+define Device/zn_m2
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_DTS := qcom-ipq6018-zn-m2
+	DEVICE_DTS_CONFIG := config@cp03-c1
+	DEVICE_TITLE := ZN M2
+	DEVICE_VENDOR := ZN
+	DEVICE_PACKAGES := kmod-usb3 kmod-usb-phy-msm
+endef
+TARGET_DEVICES += zn_m2
