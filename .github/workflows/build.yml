@@ -1,0 +1,88 @@
+name: Build ZN M2 Firmware
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+env:
+  REPO_URL: https://github.com/istoreos/istoreos.git
+  REPO_BRANCH: istoreos-24.10
+  CONFIG_FILE: ./config/zn-m2.config
+  DIY_P1_SH: ./scripts/zn-m2/diy-part1.sh
+  DIY_P2_SH: ./scripts/zn-m2/diy-part2.sh
+  DIY_P3_SH: ./scripts/zn-m2/diy-part3.sh
+  UPLOAD_RELEASE: true
+  TZ: Asia/Shanghai
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          repository: istoreos/istoreos
+          ref: ${{ env.REPO_BRANCH }}
+          path: openwrt
+
+      - name: Import ZN M2 changes
+        run: |
+          cd openwrt
+          git checkout -b zn-m2
+          git remote add zn-m2 https://github.com/no-duke/istoreos.git
+          git fetch zn-m2 zn-m2
+          git cherry-pick zn-m2/zn-m2 --strategy-option=theirs || git merge zn-m2/zn-m2 --no-edit
+
+      - name: Setup build environment
+        run: |
+          sudo apt update
+          sudo apt install -y ack antlr3 asciidoc autoconf automake autopoint binutils bison build-essential \
+            bzip2 ccache cmake cpio curl device-tree-compiler fastjar flex gawk gettext gcc-multilib g++-multilib \
+            git gperf libelf-dev libncurses5-dev libssl-dev libz-dev msmtp p7zip-full patch python3 python2.7 \
+            rsync subversion texinfo uglifyjs unzip wget zlib1g-dev
+
+      - name: Create ZN M2 config
+        run: |
+          mkdir -p openwrt/config
+          cat > openwrt/config/zn-m2.config << 'EOF'
+          CONFIG_TARGET_qualcommax=y
+          CONFIG_TARGET_qualcommax_ipq60xx=y
+          CONFIG_TARGET_qualcommax_ipq60xx_DEVICE_zn_m2=y
+          EOF
+
+      - name: Install feeds
+        run: |
+          cd openwrt
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+
+      - name: Apply config
+        run: |
+          cd openwrt
+          cp config/zn-m2.config .config
+          make defconfig
+
+      - name: Build firmware
+        run: |
+          cd openwrt
+          make -j$(nproc) V=s
+
+      - name: Upload firmware
+        uses: actions/upload-artifact@v4
+        with:
+          name: zn-m2-firmware
+          path: openwrt/bin/targets/qualcommax/ipq60xx/*zn_m2*
+          retention-days: 30
+
+      - name: Upload release
+        if: env.UPLOAD_RELEASE == 'true'
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: zn-m2-build-${{ github.run_number }}
+          name: ZN M2 Build ${{ github.run_number }}
+          files: openwrt/bin/targets/qualcommax/ipq60xx/*zn_m2*
