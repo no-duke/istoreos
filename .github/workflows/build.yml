@@ -5,15 +5,9 @@ on:
 
 permissions:
   contents: write
-  actions: write
 
 env:
-  REPO_URL: https://github.com/istoreos/istoreos.git
   REPO_BRANCH: istoreos-24.10
-  CONFIG_FILE: ./config/zn-m2.config
-  DIY_P1_SH: ./scripts/zn-m2/diy-part1.sh
-  DIY_P2_SH: ./scripts/zn-m2/diy-part2.sh
-  DIY_P3_SH: ./scripts/zn-m2/diy-part3.sh
   UPLOAD_RELEASE: true
   TZ: Asia/Shanghai
 
@@ -21,33 +15,29 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     steps:
-      - name: Checkout
+      - name: Checkout istoreos
         uses: actions/checkout@v4
         with:
           repository: istoreos/istoreos
           ref: ${{ env.REPO_BRANCH }}
           path: openwrt
 
-      - name: Import ZN M2 changes
-        run: |
-          cd openwrt
-          git checkout -b zn-m2
-          git remote add zn-m2 https://github.com/no-duke/istoreos.git
-          git fetch zn-m2 zn-m2
-          git cherry-pick zn-m2/zn-m2 --strategy-option=theirs || git merge zn-m2/zn-m2 --no-edit
-
       - name: Setup build environment
         run: |
+          cd openwrt
           sudo apt update
-          sudo apt install -y ack antlr3 asciidoc autoconf automake autopoint binutils bison build-essential \
-            bzip2 ccache cmake cpio curl device-tree-compiler fastjar flex gawk gettext gcc-multilib g++-multilib \
-            git gperf libelf-dev libncurses5-dev libssl-dev libz-dev msmtp p7zip-full patch python3 python2.7 \
-            rsync subversion texinfo uglifyjs unzip wget zlib1g-dev
+          sudo apt install -y ack antlr3 asciidoc autoconf automake autopoint binutils bison build-essential bzip2 ccache cmake cpio curl device-tree-compiler fastjar flex gawk gettext gcc-multilib g++-multilib git gperf libelf-dev libncurses5-dev libssl-dev libz-dev msmtp p7zip-full patch python3 python2.7 rsync subversion texinfo uglifyjs unzip wget zlib1g-dev
 
-      - name: Create ZN M2 config
+      - name: Install feeds
         run: |
-          mkdir -p openwrt/config
-          cat > openwrt/config/zn-m2.config << 'EOF'
+          cd openwrt
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+
+      - name: Apply config with EasyTier and 192.168.12.x
+        run: |
+          cd openwrt
+          cat > .config << 'EOF'
           CONFIG_TARGET_qualcommax=y
           CONFIG_TARGET_qualcommax_ipq60xx=y
           CONFIG_TARGET_qualcommax_ipq60xx_DEVICE_zn_m2=y
@@ -63,6 +53,7 @@ jobs:
           CONFIG_PACKAGE_luci-app-istorex=y
           CONFIG_PACKAGE_dockerd=y
           CONFIG_PACKAGE_docker=y
+          CONFIG_PACKAGE_kmod-docker=y
           CONFIG_PACKAGE_luci-app-sqm=y
           CONFIG_PACKAGE_sqm-scripts=y
           CONFIG_PACKAGE_luci-app-nlbwmon=y
@@ -71,17 +62,6 @@ jobs:
           CONFIG_PACKAGE_luci=y
           CONFIG_PACKAGE_luci-ssl=y
           EOF
-
-      - name: Install feeds
-        run: |
-          cd openwrt
-          ./scripts/feeds update -a
-          ./scripts/feeds install -a
-
-      - name: Apply config
-        run: |
-          cd openwrt
-          cp config/zn-m2.config .config
           make defconfig
 
       - name: Build firmware
