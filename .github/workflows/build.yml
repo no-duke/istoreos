@@ -1,4 +1,4 @@
-name: Build x86 Firmware
+name: Build ZN M2 Firmware
 
 on:
   workflow_dispatch:
@@ -7,7 +7,7 @@ permissions:
   contents: write
 
 env:
-  REPO_BRANCH: istoreos-24.10
+  REPO_BRANCH: openwrt-24.10
   UPLOAD_RELEASE: true
   TZ: Asia/Shanghai
 
@@ -15,51 +15,33 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     steps:
-      - name: Checkout istoreos
+      - name: Checkout
         uses: actions/checkout@v4
         with:
-          repository: istoreos/istoreos
           ref: ${{ env.REPO_BRANCH }}
-          path: openwrt
 
-      - name: Setup build environment
+      - name: Update feeds
         run: |
-          cd openwrt
-          sudo apt update
-          sudo apt install -y ack antlr3 asciidoc autoconf automake autopoint binutils bison build-essential bzip2 ccache cmake cpio curl device-tree-compiler fastjar flex gawk gettext gcc-multilib g++-multilib git gperf libelf-dev libncurses5-dev libssl-dev libz-dev msmtp p7zip-full patch python3 python2.7 rsync subversion texinfo uglifyjs unzip wget zlib1g-dev
-
-      - name: Install feeds
-        run: |
-          cd openwrt
           ./scripts/feeds update -a
           ./scripts/feeds install -a
 
-      - name: Apply config for x86 with EasyTier and 192.168.12.x
+      - name: Apply custom config for ZN-M2
         run: |
-          cd openwrt
           cat > .config << 'EOF'
-          CONFIG_TARGET_x86=y
-          CONFIG_TARGET_x86_64=y
-          CONFIG_TARGET_x86_64_DEVICE_generic=y
-          CONFIG_TARGET_BOARD="x86"
-          CONFIG_TARGET_SUBTARGET="64"
-          CONFIG_TARGET_KERNEL_PARTSIZE=256
-          CONFIG_TARGET_ROOTFS_PARTSIZE=2048
-          CONFIG_TARGET_DEFAULT_MODEM="192.168.12.1"
-          CONFIG_TARGET_ipaddr="192.168.12.1"
+          CONFIG_TARGET_ipq806x_generic=y
+          CONFIG_TARGET_ipq806x_generic_DEVICE_zyxel_qax61s=y
           CONFIG_PACKAGE_easytier=y
           CONFIG_PACKAGE_luci-app-easytier=y
+          CONFIG_TARGET_DEFAULT_MODEM="192.168.12.1"
+          CONFIG_TARGET_ipaddr="192.168.12.1"
           CONFIG_PACKAGE_zerotier=y
           CONFIG_PACKAGE_luci-app-zerotier=y
           CONFIG_PACKAGE_mihomo=y
           CONFIG_PACKAGE_luci-app-istorex=y
           CONFIG_PACKAGE_dockerd=y
           CONFIG_PACKAGE_docker=y
-          CONFIG_PACKAGE_kmod-docker=y
           CONFIG_PACKAGE_luci-app-sqm=y
           CONFIG_PACKAGE_sqm-scripts=y
-          CONFIG_PACKAGE_luci-app-nlbwmon=y
-          CONFIG_PACKAGE_nlbwmon=y
           CONFIG_PACKAGE_ttyd=y
           CONFIG_PACKAGE_luci=y
           CONFIG_PACKAGE_luci-ssl=y
@@ -68,15 +50,15 @@ jobs:
 
       - name: Build firmware
         run: |
-          cd openwrt
           make -j$(nproc) V=s
 
       - name: Upload firmware
         uses: actions/upload-artifact@v4
         with:
-          name: x86-64-firmware
-          path: openwrt/bin/targets/x86/64/*
+          name: zn-m2-firmware
+          path: bin/targets/
           retention-days: 30
+          if-no-files-found: ignore
 
       - name: Upload release
         if: env.UPLOAD_RELEASE == 'true'
@@ -84,6 +66,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: x86-build-${{ github.run_number }}
-          name: x86 Build ${{ github.run_number }}
-          files: openwrt/bin/targets/x86/64/*
+          tag_name: zn-m2-build-${{ github.run_number }}
+          name: ZN M2 Build ${{ github.run_number }}
+          files: bin/targets/**/*
+          fail_on_unmatched_files: true
