@@ -50,23 +50,39 @@ jobs:
 
       - name: Build firmware
         run: |
-          make -j$(nproc) V=s
+          make -j$(nproc) V=s || make -j1 V=s
+        continue-on-error: false
+
+      - name: Check build output
+        run: |
+          echo "=== Checking build output ==="
+          ls -la bin/targets/ 2>/dev/null || echo "No bin/targets/"
+          ls -la bin/targets/ipq806x/generic/ 2>/dev/null || echo "No ipq806x/generic/"
+          find bin -name "*.img.gz" -o -name "*.ubi" -o -name "*.bin" 2>/dev/null | head -20
+          echo "=== Build output end ==="
 
       - name: Upload firmware
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: zn-m2-firmware
-          path: bin/targets/
+          path: |
+            bin/targets/ipq806x/generic/*.img.gz
+            bin/targets/ipq806x/generic/*.ubi
+            bin/targets/ipq806x/generic/*.bin
           retention-days: 30
-          if-no-files-found: ignore
+          if-no-files-found: error
 
       - name: Upload release
-        if: env.UPLOAD_RELEASE == 'true'
+        if: env.UPLOAD_RELEASE == 'true' && success()
         uses: softprops/action-gh-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: zn-m2-build-${{ github.run_number }}
           name: ZN M2 Build ${{ github.run_number }}
-          files: bin/targets/**/*
+          files: |
+            bin/targets/ipq806x/generic/*.img.gz
+            bin/targets/ipq806x/generic/*.ubi
+            bin/targets/ipq806x/generic/*.bin
           fail_on_unmatched_files: true
