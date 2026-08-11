@@ -1,0 +1,83 @@
+name: Build Multi-Platform Firmware
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  REPO_BRANCH: istoreos-24.10
+  TZ: Asia/Shanghai
+
+jobs:
+  build:
+    name: Build ${{ matrix.platform }}
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - x86_64
+          - zn_m2
+          - mi_ra4
+        include:
+          - platform: x86_64
+            target: x86/64
+            config: |
+              CONFIG_TARGET_x86=y
+              CONFIG_TARGET_x86_64=y
+              CONFIG_TARGET_x86_64_GENERIC=y
+          - platform: zn_m2
+            target: qualcommax/ipq60xx
+            config: |
+              CONFIG_TARGET_qualcommax=y
+              CONFIG_TARGET_qualcommax_ipq60xx=y
+              CONFIG_TARGET_qualcommax_ipq60xx_DEVICE_zn_m2=y
+              CONFIG_PACKAGE_kmod-nss-qca=y
+              CONFIG_PACKAGE_qca-nss-ecm=y
+              CONFIG_PACKAGE_kmod-usb-storage=y
+              CONFIG_PACKAGE_kmod-usb-phy-msm=y
+          - platform: mi_ra4
+            target: ramips/mt7621
+            config: |
+              CONFIG_TARGET_ramips=y
+              CONFIG_TARGET_ramips_mt7621=y
+              CONFIG_TARGET_ramips_mt7621_DEVICE_mi-ra4=y
+              CONFIG_PACKAGE_kmod-usb-storage=y
+              CONFIG_PACKAGE_kmod-usb-ohci=y
+              CONFIG_PACKAGE_kmod-usb-uhci=y
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.REPO_BRANCH }}
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential flex bison gawk python3 ccache libncurses5-dev autoconf automake libelf-dev libgmp-dev libmpc-dev libmpfr-dev libisl-dev unzip git rsync coreutils texinfo xxd zlib1g-dev libssl-dev libtool libreadline-dev python3-pip
+          pip3 install --break-system-packages pyelftools
+
+      - name: Download Sources
+        run: |
+          make defconfig
+          make download -j$(nproc)
+
+      - name: Apply Config
+        run: |
+          echo "${{ matrix.config }}" >> .config
+          make defconfig
+
+      - name: Build
+        run: |
+          make -j$(nproc) || make -j1
+
+      - name: Upload Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware-${{ matrix.platform }}
+          path: bin/targets/${{ matrix.target }}/*.img.gz
+          retention-days: 30
