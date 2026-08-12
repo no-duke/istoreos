@@ -1,0 +1,227 @@
+name: Build Multi-Platform Firmware
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  TZ: Asia/Shanghai
+  MAKEJOBS: $(nproc)
+
+jobs:
+  build-zn-m2:
+    name: Build ZN-M2
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: zn-m2
+          path: openwrt
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-pip
+          pip3 install pyelftools
+
+      - name: Apply configuration
+        run: |
+          cd openwrt
+          cat ../config/zn-m2.config >> .config
+          make defconfig
+
+      - name: Download feeds
+        run: |
+          cd openwrt
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+
+      - name: Build firmware
+        run: |
+          cd openwrt
+          make -j$(nproc) V=s || make -j1 V=s
+
+      - name: Check build output
+        if: always()
+        run: |
+          echo "=== Checking build output ==="
+          find openwrt/bin -name "*.img.gz" -o -name "*.ubi" -o -name "*.bin" 2>/dev/null | head -20
+          echo "=== Build output end ==="
+
+      - name: Upload firmware
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zn-m2-firmware
+          path: openwrt/bin/targets/qualcommax/ipq60xx/
+          retention-days: 30
+
+      - name: Post cleanup
+        if: always()
+        run: |
+          cd openwrt
+          git clean -dfx
+
+  build-x86:
+    name: Build x86_64
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: istoreos-24.10
+          path: openwrt
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-pip
+          pip3 install pyelftools
+
+      - name: Apply configuration
+        run: |
+          cd openwrt
+          cat ../config/x86-64.config >> .config
+          make defconfig
+
+      - name: Download feeds
+        run: |
+          cd openwrt
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+
+      - name: Build firmware
+        run: |
+          cd openwrt
+          make -j$(nproc) V=s || make -j1 V=s
+
+      - name: Check build output
+        if: always()
+        run: |
+          echo "=== Checking build output ==="
+          find openwrt/bin -name "*.img.gz" -o -name "*.ubi" -o -name "*.bin" 2>/dev/null | head -20
+          echo "=== Build output end ==="
+
+      - name: Upload firmware
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: x86-64-firmware
+          path: openwrt/bin/targets/x86/64/
+          retention-days: 30
+
+      - name: Post cleanup
+        if: always()
+        run: |
+          cd openwrt
+          git clean -dfx
+
+  build-mi-ra4:
+    name: Build Xiaomi Router 4
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: istoreos-24.10
+          path: openwrt
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-pip
+          pip3 install pyelftools
+
+      - name: Apply configuration
+        run: |
+          cd openwrt
+          cat ../config/mi-ra4.config >> .config
+          make defconfig
+
+      - name: Download feeds
+        run: |
+          cd openwrt
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+
+      - name: Build firmware
+        run: |
+          cd openwrt
+          make -j$(nproc) V=s || make -j1 V=s
+
+      - name: Check build output
+        if: always()
+        run: |
+          echo "=== Checking build output ==="
+          find openwrt/bin -name "*.img.gz" -o -name "*.ubi" -o -name "*.bin" 2>/dev/null | head -20
+          echo "=== Build output end ==="
+
+      - name: Upload firmware
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mi-ra4-firmware
+          path: openwrt/bin/targets/ramips/mt7621/
+          retention-days: 30
+
+      - name: Post cleanup
+        if: always()
+        run: |
+          cd openwrt
+          git clean -dfx
+
+  build-g18-pro:
+    name: Build BDY G18 Pro
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: istoreos-24.10
+          path: openwrt
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-pip
+          pip3 install pyelftools
+
+      - name: Apply configuration
+        run: |
+          cd openwrt
+          echo 'CONFIG_TARGET_rockchip=y' >> .config
+          echo 'CONFIG_TARGET_rockchip_armv8=y' >> .config
+          echo 'CONFIG_TARGET_rockchip_armv8_DEVICE_bdy_g18-pro=y' >> .config
+          echo 'CONFIG_PACKAGE_luci=y' >> .config
+          make defconfig
+
+      - name: Download feeds
+        run: |
+          cd openwrt
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+
+      - name: Build firmware
+        run: |
+          cd openwrt
+          make -j$(nproc) V=s || make -j1 V=s
+
+      - name: Check build output
+        if: always()
+        run: |
+          echo "=== Checking build output ==="
+          find openwrt/bin -name "*.img.gz" -o -name "*.ubi" -o -name "*.bin" 2>/dev/null | head -20
+          echo "=== Build output end ==="
+
+      - name: Upload firmware
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: g18-pro-firmware
+          path: openwrt/bin/targets/rockchip/armv8/
+          retention-days: 30
+
+      - name: Post cleanup
+        if: always()
+        run: |
+          cd openwrt
+          git clean -dfx
