@@ -1,0 +1,159 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+
+/dts-v1/;
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/pwm/pwm.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/soc/rockchip,vop2.h>
+#include <dt-bindings/pinctrl/rockchip.h>
+#include "rk3568.dtsi"
+
+/ {
+	model = "BDY-G18 AX3000 Router";
+	compatible = "bdy,g18-pro", "rockchip,rk3568";
+
+	aliases {
+		ethernet0 = &gmac0;
+		ethernet1 = &gmac1;
+		mmc0 = &sdhci;
+	};
+
+	chosen: chosen {
+		stdout-path = "serial2:1500000n8";
+	};
+
+	fiq-debugger {
+		compatible = "rockchip,fiq-debugger";
+		rockchip,serial-id = <2>;
+		rockchip,wake-irq = <0>;
+		rockchip,irq-mode-enable = <1>;
+		rockchip,baudrate = <1500000>;
+		interrupts = <GIC_SPI 252 IRQ_TYPE_LEVEL_LOW>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&uart2m0_xfer>;
+		status = "okay";
+	};
+
+	dc_12v: dc-12v {
+		compatible = "regulator-fixed";
+		regulator-name = "dc_12v";
+		regulator-always-on;
+		regulator-boot-on;
+		regulator-min-microvolt = <12000000>;
+		regulator-max-microvolt = <12000000>;
+	};
+
+	vcc3v3_sys: vcc3v3-sys {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc3v3_sys";
+		regulator-always-on;
+		regulator-boot-on;
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		vin-supply = <&dc_12v>;
+	};
+
+	vcc5v0_sys: vcc5v0-sys {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc5v0_sys";
+		regulator-always-on;
+		regulator-boot-on;
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		vin-supply = <&dc_12v>;
+	};
+
+	vcc5v0_usb: vcc5v0-usb {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc5v0_usb";
+		regulator-always-on;
+		regulator-boot-on;
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		vin-supply = <&dc_12v>;
+	};
+};
+
+&cpu_0 {
+	device_type = "cpu";
+	reg = <0x0>;
+	clocks = <&cru ARMCLK>;
+	clock-names = "arm";
+	operating-points = <
+		( 800000  900000 )
+		( 1008000 950000 )
+		( 1512000 1050000 )
+	>;
+	clock-frequency = <800000>;
+};
+
+&gmac0 {
+	phy-mode = "rgmii";
+	rockchip,pinmux = <
+		GRF_GPIO1D_IP_SEL_CFG(2, 0x0)
+		GRF_GPIO1D_IP_SEL_CFG(3, 0x0)
+		GRF_GPIO1D_IP_SEL_CFG(4, 0x0)
+		GRF_GPIO1D_IP_SEL_CFG(5, 0x0)
+		GRF_GPIO1D_IP_SEL_CFG(6, 0x0)
+		GRF_GPIO1D_IP_SEL_CFG(7, 0x0)
+	>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&rgmii0_pins>;
+	rx delays = <0x20>;
+	tx delays = <0x20>;
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
+};
+
+&gmac1 {
+	phy-mode = "rgmii";
+	rockchip,pinmux = <
+		GRF_GPIO1C_IP_SEL_CFG(0, 0x0)
+		GRF_GPIO1C_IP_SEL_CFG(1, 0x0)
+		GRF_GPIO1C_IP_SEL_CFG(2, 0x0)
+		GRF_GPIO1C_IP_SEL_CFG(3, 0x0)
+		GRF_GPIO1C_IP_SEL_CFG(4, 0x0)
+		GRF_GPIO1C_IP_SEL_CFG(5, 0x0)
+		GRF_GPIO1C_IP_SEL_CFG(6, 0x0)
+		GRF_GPIO1C_IP_SEL_CFG(7, 0x0)
+	>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&rgmii1_pins>;
+	rx delays = <0x20>;
+	tx delays = <0x20>;
+};
+
+&pcie0 {
+	reset-gpios = <&gpio0 RK_PA5 GPIO_ACTIVE_LOW>;
+	status = "okay";
+};
+
+&pcie1 {
+	reset-gpios = <&gpio0 RK_PA4 GPIO_ACTIVE_LOW>;
+	status = "okay";
+};
+
+&wifi0 {
+	compatible = "rockchip,brcmfmac43456-sdio-rk3568";
+	reg = <0>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&wifi_enable_h>;
+	interrupt-parent = <&gpio0>;
+	interrupts = <RK_PA3 IRQ_TYPE_LEVEL_HIGH>;
+	interrupt-names = "host-notify";
+	status = "okay";
+};
+
+&sdhci {
+	bus-width = <8>;
+	no-1-8-v;
+	non-removable;
+	mmc-hs200-1_8v;
+	disable-wp;
+	status = "okay";
+};
