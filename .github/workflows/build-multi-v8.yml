@@ -143,29 +143,14 @@ jobs:
           ref: istoreos-24.10
           path: openwrt
 
-      - name: Add G18 Pro device definition
+      - name: Verify G18 Pro device tree exists
         run: |
           cd openwrt
-          cat >> target/linux/rockchip/image/armv8.mk << 'ENDDEF'
-define Device/bdy_g18-pro
-  $(Device/u-boot-separate)
-  $(Device/uefi-lp5)
-  DEVICE_VENDOR := BDY
-  DEVICE_MODEL := G18 Pro
-  SOC := rk3568
-  DEVICE_DTS := rockchip/rk3568-bdy-g18-pro
-  UBOOT_DEVICE_NAME := bdy-g18-pro-rk3568
-  IMAGE/sysupgrade.itb := kernel-bin | gzip | append-u-boot-rk3568-sd
-  IMAGES += recovery.img
-  IMAGE/recovery.img := partition Recovery | rkdevalrom
-endef
-TARGET_DEVICES += bdy_g18-pro
-ENDDEF
-
-      - name: Add G18 Pro device tree
-        run: |
-          cd openwrt
-          curl -sL "https://raw.githubusercontent.com/unifreq/linux-6.6.y/main/arch/arm64/boot/dts/rockchip/rk3568-bdy-g18-pro.dts" -o target/linux/rockchip/dts/rk3568-bdy-g18-pro.dts
+          if [ ! -f "target/linux/rockchip/dts/rk3568-bdy-g18-pro.dts" ]; then
+            echo "G18 Pro device tree not found, downloading..."
+            curl -sL "https://raw.githubusercontent.com/unifreq/linux-6.6.y/main/arch/arm64/boot/dts/rockchip/rk3568-bdy-g18-pro.dts" -o target/linux/rockchip/dts/rk3568-bdy-g18-pro.dts
+          fi
+          ls -la target/linux/rockchip/dts/rk3568-bdy-g18-pro.dts
 
       - name: Apply G18 Pro config
         run: |
