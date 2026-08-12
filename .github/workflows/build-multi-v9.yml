@@ -1,0 +1,171 @@
+name: Build Multi-Platform Firmware
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  TZ: Asia/Shanghai
+
+jobs:
+  build-zn-m2:
+    name: Build ZN-M2
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout zn-m2 branch
+        uses: actions/checkout@v4
+        with:
+          ref: zn-m2
+          path: openwrt
+
+      - name: Apply custom config
+        run: |
+          cd openwrt
+          cp config/zn-m2.config .config
+          echo "" >> .config
+          echo 'CONFIG_DEFAULT_MODEM="192.168.12.1"' >> .config
+          echo 'CONFIG_DEFAULT_ipaddr="192.168.12.1"' >> .config
+          make defconfig
+
+      - name: Build firmware
+        run: |
+          cd openwrt
+          make -j$(nproc) V=s
+
+      - name: Check build output
+        if: always()
+        run: |
+          echo "=== Checking build output ==="
+          find openwrt/bin -name "*.img.gz" -o -name "*.ubi" -o -name "*.bin" 2>/dev/null | head -20
+          echo "=== Build output end ==="
+
+      - name: Upload firmware
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zn-m2-firmware
+          path: openwrt/bin/targets/qualcommax/ipq60xx/
+          retention-days: 30
+
+  build-x86:
+    name: Build x86_64
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout istoreos-24.10
+        uses: actions/checkout@v4
+        with:
+          ref: istoreos-24.10
+          path: openwrt
+
+      - name: Apply x86 config
+        run: |
+          cd openwrt
+          make defconfig
+          echo 'CONFIG_TARGET_x86=y' >> .config
+          echo 'CONFIG_TARGET_x86_64=y' >> .config
+          echo 'CONFIG_TARGET_x86_64_GENERIC=y' >> .config
+          echo 'CONFIG_PACKAGE_luci=y' >> .config
+          make defconfig
+
+      - name: Build firmware
+        run: |
+          cd openwrt
+          make -j$(nproc) V=s
+
+      - name: Check build output
+        if: always()
+        run: |
+          echo "=== Checking build output ==="
+          find openwrt/bin -name "*.img.gz" -o -name "*.bin" 2>/dev/null | head -20
+          echo "=== Build output end ==="
+
+      - name: Upload firmware
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: x86-firmware
+          path: openwrt/bin/targets/x86/64/
+          retention-days: 30
+
+  build-mi-ra4:
+    name: Build Xiaomi Router 4
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout istoreos-24.10
+        uses: actions/checkout@v4
+        with:
+          ref: istoreos-24.10
+          path: openwrt
+
+      - name: Apply mi-ra4 config
+        run: |
+          cd openwrt
+          make defconfig
+          echo 'CONFIG_TARGET_ramips=y' >> .config
+          echo 'CONFIG_TARGET_ramips_mt7621=y' >> .config
+          echo 'CONFIG_TARGET_ramips_mt7621_DEVICE_xiaomi_mi-router-4=y' >> .config
+          echo 'CONFIG_PACKAGE_kmod-usb-storage=y' >> .config
+          echo 'CONFIG_PACKAGE_luci=y' >> .config
+          make defconfig
+
+      - name: Build firmware
+        run: |
+          cd openwrt
+          make -j$(nproc) V=s
+
+      - name: Check build output
+        if: always()
+        run: |
+          echo "=== Checking build output ==="
+          find openwrt/bin -name "*.img.gz" -o -name "*.bin" 2>/dev/null | head -20
+          echo "=== Build output end ==="
+
+      - name: Upload firmware
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mi-ra4-firmware
+          path: openwrt/bin/targets/ramips/mt7621/
+          retention-days: 30
+
+  build-g18-pro:
+    name: Build BDY G18 Pro
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout istoreos-24.10
+        uses: actions/checkout@v4
+        with:
+          ref: istoreos-24.10
+          path: openwrt
+
+      - name: Apply G18 Pro config
+        run: |
+          cd openwrt
+          make defconfig
+          echo 'CONFIG_TARGET_rockchip=y' >> .config
+          echo 'CONFIG_TARGET_rockchip_armv8=y' >> .config
+          echo 'CONFIG_TARGET_rockchip_armv8_DEVICE_bdy_g18-pro=y' >> .config
+          echo 'CONFIG_PACKAGE_luci=y' >> .config
+          make defconfig
+
+      - name: Build firmware
+        run: |
+          cd openwrt
+          make -j$(nproc) V=s
+
+      - name: Check build output
+        if: always()
+        run: |
+          echo "=== Checking build output ==="
+          find openwrt/bin -name "*.itb" -o -name "*.img" -o -name "*.bin" 2>/dev/null | head -20
+          echo "=== Build output end ==="
+
+      - name: Upload firmware
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: g18-pro-firmware
+          path: openwrt/bin/targets/rockchip/armv8/
+          retention-days: 30
