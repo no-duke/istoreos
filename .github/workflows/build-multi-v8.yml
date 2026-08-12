@@ -143,15 +143,6 @@ jobs:
           ref: istoreos-24.10
           path: openwrt
 
-      - name: Verify G18 Pro device tree exists
-        run: |
-          cd openwrt
-          if [ ! -f "target/linux/rockchip/dts/rk3568-bdy-g18-pro.dts" ]; then
-            echo "G18 Pro device tree not found, downloading..."
-            curl -sL "https://raw.githubusercontent.com/unifreq/linux-6.6.y/main/arch/arm64/boot/dts/rockchip/rk3568-bdy-g18-pro.dts" -o target/linux/rockchip/dts/rk3568-bdy-g18-pro.dts
-          fi
-          ls -la target/linux/rockchip/dts/rk3568-bdy-g18-pro.dts
-
       - name: Apply G18 Pro config
         run: |
           cd openwrt
