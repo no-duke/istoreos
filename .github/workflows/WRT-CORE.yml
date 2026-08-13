@@ -40,6 +40,10 @@ on:
       WRT_SOURCE:
         required: true
         type: string
+      WRT_PACKAGE:
+        required: false
+        type: string
+        default: ''
 
 env:
   GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
