@@ -1,0 +1,95 @@
+# ============================================================
+# iStoreOS 多平台固件编译入口
+# ============================================================
+
+name: Build Multi-Platform
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: '选择编译平台'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - zn-m2
+          - x86
+          - mi-ra4
+          - g18-pro
+      PACKAGE:
+        description: '手动调整插件包，多个请用换行隔开'
+        required: false
+        type: string
+
+permissions: write-all
+
+jobs:
+  # ZN-M2 编译
+  zn-m2:
+    if: github.event.inputs.platform == 'all' || github.event.inputs.platform == 'zn-m2'
+    name: ZN-M2 (IPQ6018)
+    uses: ./.github/workflows/WRT-CORE.yml
+    with:
+      WRT_CONFIG: IPQ60XX-WIFI-NO-ZN-M2
+      WRT_THEME: aurora
+      WRT_NAME: OpenWrt
+      WRT_SSID: OpenWrt
+      WRT_WORD: 12345678
+      WRT_IP: 192.168.12.1
+      WRT_REPO: https://github.com/no-duke/istoreos.git
+      WRT_BRANCH: istoreos-24.10
+      WRT_SOURCE: no-duke/istoreos
+      WRT_PACKAGE: ${{inputs.PACKAGE}}
+
+  # x86_64 编译
+  x86:
+    if: github.event.inputs.platform == 'all' || github.event.inputs.platform == 'x86'
+    name: x86_64
+    uses: ./.github/workflows/WRT-CORE.yml
+    with:
+      WRT_CONFIG: X86
+      WRT_THEME: aurora
+      WRT_NAME: OpenWrt
+      WRT_SSID: OpenWrt
+      WRT_WORD: 12345678
+      WRT_IP: 192.168.1.1
+      WRT_REPO: https://github.com/no-duke/istoreos.git
+      WRT_BRANCH: istoreos-24.10
+      WRT_SOURCE: no-duke/istoreos
+      WRT_PACKAGE: ${{inputs.PACKAGE}}
+
+  # mi_ra4 编译
+  mi-ra4:
+    if: github.event.inputs.platform == 'all' || github.event.inputs.platform == 'mi-ra4'
+    name: Xiaomi Router 4
+    uses: ./.github/workflows/WRT-CORE.yml
+    with:
+      WRT_CONFIG: MT7621-mi-ra4
+      WRT_THEME: aurora
+      WRT_NAME: OpenWrt
+      WRT_SSID: OpenWrt
+      WRT_WORD: 12345678
+      WRT_IP: 192.168.1.1
+      WRT_REPO: https://github.com/no-duke/istoreos.git
+      WRT_BRANCH: istoreos-24.10
+      WRT_SOURCE: no-duke/istoreos
+      WRT_PACKAGE: ${{inputs.PACKAGE}}
+
+  # G18 Pro 编译
+  g18-pro:
+    if: github.event.inputs.platform == 'all' || github.event.inputs.platform == 'g18-pro'
+    name: BDY G18 Pro
+    uses: ./.github/workflows/WRT-CORE.yml
+    with:
+      WRT_CONFIG: RK3568-G18Pro
+      WRT_THEME: aurora
+      WRT_NAME: OpenWrt
+      WRT_SSID: OpenWrt
+      WRT_WORD: 12345678
+      WRT_IP: 192.168.1.1
+      WRT_REPO: https://github.com/no-duke/istoreos.git
+      WRT_BRANCH: istoreos-24.10
+      WRT_SOURCE: no-duke/istoreos
+      WRT_PACKAGE: ${{inputs.PACKAGE}}
