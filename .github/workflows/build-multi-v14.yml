@@ -1,0 +1,207 @@
+# ============================================================
+# iStoreOS Multi-Platform Firmware Builder (v14)
+# 所有平台统一使用 istoreos-24.10 分支
+# ============================================================
+
+name: Build Multi-Platform Firmware
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: '选择编译平台'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - zn-m2
+          - x86
+          - mi-ra4
+          - g18-pro
+
+permissions:
+  contents: write
+
+env:
+  TZ: Asia/Shanghai
+
+jobs:
+  # ------------------------------------------------------------
+  # Job 1: ZN-M2 (IPQ6018)
+  # ------------------------------------------------------------
+  build-zn-m2:
+    name: Build ZN-M2
+    runs-on: ubuntu-22.04
+    if: >-
+      github.event_name != 'workflow_dispatch' ||
+      github.event.inputs.platform == 'all' ||
+      github.event.inputs.platform == 'zn-m2'
+    steps:
+      - name: Checkout istoreos-24.10
+        uses: actions/checkout@v4
+        with:
+          ref: istoreos-24.10
+          path: openwrt
+
+      - name: Apply configuration
+        run: |
+          cd openwrt
+          cp config/zn-m2.config .config
+          echo "" >> .config
+          echo "# LAN IP configuration" >> .config
+          echo 'CONFIG_DEFAULT_MODEM="192.168.12.1"' >> .config
+          echo 'CONFIG_DEFAULT_ipaddr="192.168.12.1"' >> .config
+          make defconfig
+
+      - name: Build firmware
+        run: |
+          cd openwrt
+          make -j$(nproc) V=s || make -j1 V=s
+
+      - name: Check build output
+        if: always()
+        run: |
+          echo "=== Checking build output ==="
+          find bin -name "*.img.gz" -o -name "*.ubi" -o -name "*.bin" 2>/dev/null | head -20
+          echo "=== Build output end ==="
+
+      - name: Upload firmware
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zn-m2-firmware
+          path: openwrt/bin/targets/qualcommax/ipq60xx/
+          retention-days: 30
+
+  # ------------------------------------------------------------
+  # Job 2: x86_64
+  # ------------------------------------------------------------
+  build-x86:
+    name: Build x86_64
+    runs-on: ubuntu-22.04
+    if: >-
+      github.event_name != 'workflow_dispatch' ||
+      github.event.inputs.platform == 'all' ||
+      github.event.inputs.platform == 'x86'
+    steps:
+      - name: Checkout istoreos-24.10
+        uses: actions/checkout@v4
+        with:
+          ref: istoreos-24.10
+          path: openwrt
+
+      - name: Apply configuration
+        run: |
+          cd openwrt
+          cat config/x86-64.config >> .config
+          make defconfig
+
+      - name: Build firmware
+        run: |
+          cd openwrt
+          make -j$(nproc) V=s || make -j1 V=s
+
+      - name: Check build output
+        if: always()
+        run: |
+          echo "=== Checking build output ==="
+          find bin -name "*.img.gz" -o -name "*.bin" 2>/dev/null | head -20
+          echo "=== Build output end ==="
+
+      - name: Upload firmware
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: x86-64-firmware
+          path: openwrt/bin/targets/x86/64/
+          retention-days: 30
+
+  # ------------------------------------------------------------
+  # Job 3: 小米路由器4 (mi_ra4)
+  # ------------------------------------------------------------
+  build-mi-ra4:
+    name: Build Xiaomi Router 4
+    runs-on: ubuntu-22.04
+    if: >-
+      github.event_name != 'workflow_dispatch' ||
+      github.event.inputs.platform == 'all' ||
+      github.event.inputs.platform == 'mi-ra4'
+    steps:
+      - name: Checkout istoreos-24.10
+        uses: actions/checkout@v4
+        with:
+          ref: istoreos-24.10
+          path: openwrt
+
+      - name: Apply configuration
+        run: |
+          cd openwrt
+          cat config/mi-ra4.config >> .config
+          make defconfig
+
+      - name: Build firmware
+        run: |
+          cd openwrt
+          make -j$(nproc) V=s || make -j1 V=s
+
+      - name: Check build output
+        if: always()
+        run: |
+          echo "=== Checking build output ==="
+          find bin -name "*.bin" -o -name "*.ubi" 2>/dev/null | head -20
+          echo "=== Build output end ==="
+
+      - name: Upload firmware
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mi-ra4-firmware
+          path: openwrt/bin/targets/ramips/mt7621/
+          retention-days: 30
+
+  # ------------------------------------------------------------
+  # Job 4: 彼度云 G18 Pro
+  # ------------------------------------------------------------
+  build-g18-pro:
+    name: Build BDY G18 Pro
+    runs-on: ubuntu-22.04
+    if: >-
+      github.event_name != 'workflow_dispatch' ||
+      github.event.inputs.platform == 'all' ||
+      github.event.inputs.platform == 'g18-pro'
+    steps:
+      - name: Checkout istoreos-24.10
+        uses: actions/checkout@v4
+        with:
+          ref: istoreos-24.10
+          path: openwrt
+
+      - name: Apply configuration
+        run: |
+          cd openwrt
+          echo 'CONFIG_TARGET_rockchip=y' >> .config
+          echo 'CONFIG_TARGET_rockchip_armv8=y' >> .config
+          echo 'CONFIG_TARGET_rockchip_armv8_DEVICE_bdy_g18-pro=y' >> .config
+          echo 'CONFIG_PACKAGE_luci=y' >> .config
+          make defconfig
+
+      - name: Build firmware
+        run: |
+          cd openwrt
+          make -j$(nproc) V=s || make -j1 V=s
+
+      - name: Check build output
+        if: always()
+        run: |
+          echo "=== Checking build output ==="
+          find bin -name "*.itb" -o -name "*.img" -o -name "*.bin" 2>/dev/null | head -20
+          echo "=== Build output end ==="
+
+      - name: Upload firmware
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: g18-pro-firmware
+          path: openwrt/bin/targets/rockchip/armv8/
+          retention-days: 30
