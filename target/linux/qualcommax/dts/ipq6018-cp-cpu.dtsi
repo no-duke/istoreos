@@ -1,0 +1,18 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+/* CPU and CP configuration for IPQ6018 */
+
+&cp0 {
+	status = "okay";
+};
+
+&cp1 {
+	status = "okay";
+};
+
+&cp2 {
+	status = "okay";
+};
+
+&cp3 {
+	status = "okay";
+};
