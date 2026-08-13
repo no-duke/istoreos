@@ -1,0 +1,4 @@
+# G18 Pro (Rockchip RK3568)
+CONFIG_TARGET_rockchip=y
+CONFIG_TARGET_rockchip_armv8=y
+CONFIG_TARGET_DEVICE_rockchip_armv8_DEVICE_bdy_g18-pro=y
