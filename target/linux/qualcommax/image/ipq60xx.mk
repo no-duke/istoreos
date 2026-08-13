@@ -57,7 +57,7 @@ define Device/zn_m2
 	$(call Device/UbiFit)
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
-	DEVICE_DTS := qcom-ipq6018-zn-m2
+	DEVICE_DTS := ipq6018-zn-m2
 	DEVICE_DTS_CONFIG := config@cp03-c1
 	DEVICE_TITLE := ZN M2
 	DEVICE_VENDOR := ZN
