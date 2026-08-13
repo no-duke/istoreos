@@ -95,7 +95,8 @@ jobs:
 
       - name: Clone Code
         run: |
-          git clone --depth=1 --single-branch --branch ${WRT_BRANCH} ${WRT_REPO} ./build/
+          # 使用已 checkout 的代码（包含自定义文件），复制为 build 目录
+          cp -r . ./build/
           cd ./build/ && echo "WRT_HASH=$(git log -1 --pretty=format:'%h')" >> $GITHUB_ENV
 
       - name: Check Scripts
