@@ -21,7 +21,7 @@ if [ -f "$FEEDS_CUSTOM" ]; then
     # Append custom feeds
     cat "$FEEDS_CUSTOM" | grep -v '^#' | grep -v '^$' >> feeds.conf.default
     echo "  -> Custom feeds added:"
-    grep -E "passwall" feeds.conf.default
+    grep -E "passwall" feeds.conf.default || true
 fi
 
 # 2. Set default hostname and timezone
