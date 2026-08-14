@@ -20,10 +20,10 @@ if [ -f "$FEEDS_CUSTOM" ]; then
     touch feeds.conf.default
     # Remove existing passwall entries to avoid duplicates
     sed -i '/passwall/d' feeds.conf.default
-    # Append custom feeds
-    cat "$FEEDS_CUSTOM" | grep -v '^#' | grep -v '^$' >> feeds.conf.default
+    # Append custom feeds (filter comments and empty lines)
+    grep -v '^#' "$FEEDS_CUSTOM" | grep -v '^$' >> feeds.conf.default || true
     echo "  -> Custom feeds added:"
-    grep -E "passwall" feeds.conf.default || true
+    grep -E "passwall|custom" feeds.conf.default || true
 fi
 
 # 2. Set default hostname and timezone
