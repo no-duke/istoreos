@@ -16,6 +16,8 @@ FEEDS_CUSTOM="$SCRIPT_DIR/feeds.conf.custom"
 
 if [ -f "$FEEDS_CUSTOM" ]; then
     echo "[1/3] Adding custom feeds..."
+    # Ensure feeds.conf.default exists
+    touch feeds.conf.default
     # Remove existing passwall entries to avoid duplicates
     sed -i '/passwall/d' feeds.conf.default
     # Append custom feeds
