@@ -94,9 +94,10 @@ jobs:
           echo "WRT_KVER=none" >> $GITHUB_ENV
 
       - name: Clone Code
-        run: |
-          # 使用已 checkout 的代码（包含自定义文件），复制为 build 目录
-          cp -r . ./build/
+        run: |-
+          # 使用已 checkout 的代码（包含自定义文件），复制到 build 目录
+          mkdir -p ./build
+          rsync -a --exclude='./build' . ./build/
           cd ./build/ && echo "WRT_HASH=$(git log -1 --pretty=format:'%h')" >> $GITHUB_ENV
 
       - name: Check Scripts
