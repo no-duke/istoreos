@@ -1,0 +1,27 @@
+# ZN-M2 Firewall Configuration
+
+config defaults
+    option syn_flood '1'
+    option input 'ACCEPT'
+    option output 'ACCEPT'
+    option forward 'ACCEPT'
+
+config zone
+    option name 'lan'
+    option network 'lan'
+    option mtu_flip '1'
+    option input 'ACCEPT'
+    option output 'ACCEPT'
+    option forward 'ACCEPT'
+    option masq '1'
+    option mtu '1500'
+
+config zone
+    option name 'wan'
+    option network 'wan'
+    option mtu_flip '1'
+    option input 'reject'
+    option output 'ACCEPT'
+    option forward 'reject'
+    option masq '1'
+    option mtu '1500'
