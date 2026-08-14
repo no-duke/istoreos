@@ -48,12 +48,15 @@ echo "[2/6] Installing ZN-M2 DTS file..."
 DTS_DIR="target/linux/qualcommax/files/arch/arm64/boot/dts/qcom"
 DTS_FILE="$DTS_DIR/ipq6000-m2.dts"
 
-if [ -f "$SCRIPT_DIR/patches/ipq6000-m2.dts" ]; then
+# Use absolute path for patches
+PATCHES_DIR="$SCRIPT_DIR/patches"
+if [ -f "$PATCHES_DIR/ipq6000-m2.dts" ]; then
     mkdir -p "$DTS_DIR"
-    cp "$SCRIPT_DIR/patches/ipq6000-m2.dts" "$DTS_FILE"
+    cp "$PATCHES_DIR/ipq6000-m2.dts" "$DTS_FILE"
     echo "  -> DTS file installed: $DTS_FILE"
 else
-    echo "  -> ERROR: patches/ipq6000-m2.dts not found!"
+    echo "  -> ERROR: patches/ipq6000-m2.dts not found at $PATCHES_DIR"
+    ls -la "$PATCHES_DIR" 2>/dev/null || echo "     Patches directory not found!"
     exit 1
 fi
 
