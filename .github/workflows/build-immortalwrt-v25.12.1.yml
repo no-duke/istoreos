@@ -66,6 +66,7 @@ jobs:
 
       - name: Clone source code
         run: |
+          echo "Cloning ImmortalWrt $REPO_TAG..."
           git clone --depth 1 --single-branch -b "$REPO_TAG" "$REPO_URL" openwrt
           cd openwrt
           echo "=== Git info ==="
@@ -74,11 +75,7 @@ jobs:
           echo "=== Kernel version ==="
           grep -r "KERNEL_PATCHVER" target/linux/qualcommax/Makefile 2>/dev/null || true
           echo ""
-          echo "=== Verify ipq60xx subtarget exists ==="
-          grep "ipq60xx" target/linux/qualcommax/Makefile 2>/dev/null || exit 1
-          echo "ipq60xx subtarget confirmed."
-          echo ""
-          echo "=== Existing IPQ60xx devices (before patching) ==="
+          echo "=== Existing IPQ60xx devices ==="
           grep "TARGET_DEVICES +=" target/linux/qualcommax/image/ipq60xx.mk 2>/dev/null || true
 
       - name: Cache toolchain and dl
@@ -88,9 +85,9 @@ jobs:
             openwrt/dl
             openwrt/staging_dir
             openwrt/build_dir/host
-          key: ${{ runner.os }}-zn-m2-${{ env.REPO_TAG }}-${{ hashFiles('configs/zn-m2.config') }}
+          key: ${{ runner.os }}-zn-m2-v2512-${{ hashFiles('configs/zn-m2.config') }}
           restore-keys: |
-            ${{ runner.os }}-zn-m2-${{ env.REPO_TAG }}-
+            ${{ runner.os }}-zn-m2-v2512-
 
       - name: Run DIY script (part 1)
         run: |
@@ -113,12 +110,16 @@ jobs:
       - name: Apply custom config
         run: |
           cd openwrt
+          # Copy files from files/ directory
+          cp -r ../files/* . 2>/dev/null || true
+          # Copy patches
           cp -r ../scripts/patches/* . 2>/dev/null || true
+          # Apply config
           cp ../configs/${{ env.CONFIG_FILE }} .config
           make defconfig
 
           echo "=== Key config items ==="
-          grep -E "TARGET_qualcommax|TARGET.*DEVICE.*zn_m2|LINUX|PPPOE" .config || true
+          grep -E "TARGET_qualcommax|TARGET.*DEVICE.*zn_m2|LINUX" .config || true
 
           echo "=== Verify target device ==="
           if grep -q "CONFIG_TARGET_qualcommax_ipq60xx_DEVICE_zn_m2=y" .config; then
@@ -133,7 +134,7 @@ jobs:
         run: |
           cd openwrt
           make download -j$(nproc) 2>&1 | tail -20 || {
-            echo "Download failed, trying with single thread..."
+            echo "Download failed, trying single thread..."
             make download -j1 V=s
           }
 
